@@ -157,6 +157,28 @@ end
 -- call StartMatch on each new match game state as soon as its netcode session
 -- exists, before the match begins, so the session drives the match from frame 0.
 local last_gs = nil
+
+-- The game possesses fighters by controller id, and a remote human (LocalControllerId
+-- -1) listed after the local player steals the local controller: the host then drives
+-- the other player's fighter and its own netcode input stays empty. For the first
+-- seconds of each match, make sure our controller is on the fighter with our index.
+local possess_key, possess_until = nil, 0
+local function fix_possession(gs, match_key, player)
+    if possess_key ~= match_key then possess_key = match_key; possess_until = os.clock() + 20 end
+    if os.clock() > possess_until then return end
+    local pc = statics():GetPlayerController(gs, 0)
+    if not pc or not pc:IsValid() then return end
+    local pawn = pc.Pawn
+    if pawn and pawn:IsValid() and pawn.PlayerIndex == player then return end
+    for _, c in ipairs(FindAllOf("MvsFixedCharacter") or {}) do
+        if c:IsValid() and c.PlayerIndex == player then
+            pc:Possess(c)
+            print(string.format("[DevExec] controller moved to our fighter (player %d)\n", player))
+            return
+        end
+    end
+end
+
 local function auto_connect()
     local f = io.open("MvsNet.txt", "r")
     if not f then return end
@@ -173,7 +195,10 @@ local function auto_connect()
     -- (game state, session); the session is created fresh for every match.
     -- (Calling GetFullName() on the just-spawned game state kills the process.)
     local match_key = string.format("%X/%X", gs:GetAddress(), session:GetAddress())
-    if match_key == last_gs then return end
+    if match_key == last_gs then
+        if gs.MatchStarted then pcall(fix_possession, gs, match_key, tonumber(player)) end
+        return
+    end
     last_gs = match_key
     -- (MvsRevival.dll's StartMatch hook also clears the game state's "offline match"
     -- flag, without which AdvanceFrame never feeds the netcode session.)

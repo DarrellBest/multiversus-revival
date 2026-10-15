@@ -63,6 +63,8 @@ Gameplay screenshots are on the way. They are being captured from the current te
 - **Something broke:** send these two files from your game's `Binaries\Win64` folder:
   - `MvsRevival.log`
   - `UE4SS.log`
+- **The game crashed:** also send the newest folder in `%LOCALAPPDATA%\MultiVersus\Saved\Crashes` (paste that path into File Explorer's address bar), zipped.
+- **Updating:** download the ZIP again and re-run `install.ps1`. It replaces the old files.
 - **Skip the faceoff:** create an empty file named `MvsRevival.nofaceoff` next to the game's exe to go straight to the stage.
 
 ## For modders and contributors
