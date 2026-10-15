@@ -1,0 +1,36 @@
+# This repository ships only what players need to install the mod.
+# Development material stays out of it.
+src/
+tools/
+server/
+notes/
+dumps/
+dist/
+backups/
+build/
+*.pdb
+*.obj
+*.exp
+*.lib
+__pycache__/
+
+# Runtime files the mod writes next to the game
+*.log
+MvsRevival.roster
+MvsRevival.netstatus
+MvsRevival.netcmd
+MvsRevival.ready
+MvsRevival.team
+MvsRevival.pick
+MvsRevival.perks
+MvsRevival.handicap
+MvsRevival.cgactive
+MvsRevival.cgsettings
+MvsRevival.matchspec*
+MvsRevival.menu-ready
+MvsRevival.travel
+MvsRevival.start
+MvsRevival.trace
+MvsNet.txt
+MvsCmd.lua*
+crashdumps/

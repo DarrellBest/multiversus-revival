@@ -1,0 +1,4 @@
+MultiVersus pak AES-256 key (Steam build 2025-03-19):
+0x419DFFC484F1CED86842DD4E6DD914F02E3E119725F556C4B9AA44432021A9AC
+
+Use it with FModel or CUE4Parse to browse the game's assets (UE 5.1, mappings from UE4SS).
