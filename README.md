@@ -10,9 +10,12 @@ This is a community preservation project. It uses the game you already have inst
 - **Online play over Steam:** one player hosts from their own game. Friends join with a 5-letter code or a Steam invite. Steam handles the connection, so no router setup is needed.
 - **The original screens, working again:**
   - **Custom Game lobbies:** teams, time, ring-outs, hazards, map selection, handicap and bots.
+  - **Game modes and mutators:** the lobby's Game Mode picker (Tiny, Tiny vs Giant, Volleyball, Race!, Rocket Fist Rain, Spotlight, Ice Pit and the rest) and Global Mutators work, plus the Free-For-All layout.
+  - **Spectators:** extra players in a full lobby (or anyone who picks Join Spectators) watch the match live.
   - **Fighter and skin select**, and the **faceoff screen** with perk selection.
   - **Results screen**, then **Return to Lobby** for the next match.
 - **Quick match:** the Unranked 1v1 and 2v2 tiles find another player who pressed the same tile.
+- **If someone leaves before the match starts**, the match is cancelled and everyone goes back to the lobby.
 
 ## Install (2 minutes)
 
@@ -78,5 +81,5 @@ Gameplay screenshots are on the way. They are being captured from the current te
 ## Credits and licenses
 
 - **UE4SS:** © Narknon and contributors, MIT license, see [`licenses/UE4SS-LICENSE.txt`](licenses/UE4SS-LICENSE.txt).
-- **OpenVersus:** the netcode start handshake and several protocol details were cross-checked against [OpenVersus](https://github.com/openversus)' rollback server (MIT license). Thanks to that team.
+- **OpenVersus:** the netcode start handshake, input prediction and pacing follow [OpenVersus](https://github.com/openversus)' rollback server; the game mode and map rotation tables come from their server, and the banner and match-cancel calls from their client (all MIT license, see [`licenses/OpenVersus-LICENSE.txt`](licenses/OpenVersus-LICENSE.txt)). Thanks to that team.
 - **MultiVersus** is © Warner Bros. Games / Player First Games. This is an unofficial fan project, not affiliated with or endorsed by them. You need your own copy of the game.
