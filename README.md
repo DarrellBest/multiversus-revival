@@ -17,23 +17,28 @@ This is a community preservation project. It uses the game you already have inst
 - **Quick match:** the Unranked 1v1 and 2v2 tiles find another player who pressed the same tile.
 - **If someone leaves before the match starts**, the match is cancelled and everyone goes back to the lobby.
 
-## Install (2 minutes)
+## Install (1 minute)
 
 You need **MultiVersus installed through Steam on Windows**. Every player installs the mod.
 
-1. **Download this project:** click the green **Code** button above, then **Download ZIP**.
-2. **Unzip it** anywhere, for example your Desktop.
-3. Open the unzipped folder, **right-click `install.ps1`** and choose **Run with PowerShell**.
-   - The installer finds MultiVersus in your Steam library and copies the mod into the game folder.
-   - If Windows asks whether to run the script, choose **Open** or **Run**.
-   - If it can't find the game, see **Manual install** below.
-4. **Start MultiVersus from Steam** as usual.
+1. **Download this project:** click the green **Code** button above, then **Download ZIP**, and unzip it anywhere.
+2. **Double-click `Install.bat`.**
 
-That's it. On the home screen, **PLAY** opens the multiplayer menu.
+The installer finds MultiVersus by itself, in any Steam library on any drive, whatever the folder is called, copies the mod in and offers to start the game. If Windows asks whether to run it, choose **Run** (or **More info** > **Run anyway**). Close MultiVersus first if it's running.
+
+**Even quicker:** skip the download. Open PowerShell (Start menu, type `powershell`) and paste:
+
+```powershell
+irm https://raw.githubusercontent.com/DarrellBest/multiversus-revival/main/install.ps1 | iex
+```
+
+It downloads the latest version and installs it the same way. Run either one again any time to update.
+
+On the home screen, **PLAY** opens the multiplayer menu.
 
 ### Manual install
 
-If the installer can't find the game:
+If the installer can't find the game, it asks you to pick the MultiVersus folder. To do it by hand instead:
 
 1. In Steam, right-click **MultiVersus**, then choose **Manage** and **Browse local files**.
 2. Open `MultiVersus\Binaries\Win64`. It contains `MultiVersus-Win64-Shipping.exe`.
@@ -67,7 +72,7 @@ Gameplay screenshots are on the way. They are being captured from the current te
   - `MvsRevival.log`
   - `UE4SS.log`
 - **The game crashed:** also send the newest folder in `%LOCALAPPDATA%\MultiVersus\Saved\Crashes` (paste that path into File Explorer's address bar), zipped.
-- **Updating:** download the ZIP again and re-run `install.ps1`. It replaces the old files.
+- **Updating:** run `Install.bat` from a fresh download, or the PowerShell line above. It replaces the old files.
 - **Skip the faceoff:** create an empty file named `MvsRevival.nofaceoff` next to the game's exe to go straight to the stage.
 
 ## For modders and contributors
