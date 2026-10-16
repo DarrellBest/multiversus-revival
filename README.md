@@ -78,4 +78,5 @@ Gameplay screenshots are on the way. They are being captured from the current te
 ## Credits and licenses
 
 - **UE4SS:** © Narknon and contributors, MIT license, see [`licenses/UE4SS-LICENSE.txt`](licenses/UE4SS-LICENSE.txt).
+- **OpenVersus:** the netcode start handshake and several protocol details were cross-checked against [OpenVersus](https://github.com/openversus)' rollback server (MIT license). Thanks to that team.
 - **MultiVersus** is © Warner Bros. Games / Player First Games. This is an unofficial fan project, not affiliated with or endorsed by them. You need your own copy of the game.
