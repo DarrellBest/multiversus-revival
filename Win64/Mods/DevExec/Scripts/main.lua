@@ -42,10 +42,13 @@ local function statics() return StaticFindObject("/Script/Engine.Default__Gamepl
 -- objects). Traveling() is true for TRAVEL_QUIET seconds after each travel.
 local TRAVEL_QUIET = 8
 local travel_until = 0
+local flush_cache = false     -- set on travel: even "long-lived" objects can be rebuilt (the
+                              -- trip back to the title screen recreates the inventory manager)
 function Traveling()
     local f = io.open("MvsRevival.travel", "r")
     if f then
         f:close(); os.remove("MvsRevival.travel")
+        flush_cache = true
         travel_until = os.clock() + TRAVEL_QUIET
         print("[DevExec] travel: world queries paused\n")
     end
@@ -58,6 +61,7 @@ end
 local cache, cache_world = {}, nil
 local persistent = { InventoryManager = true, MvsGameplayConfig = true, cfg = true }
 function Cached(class_name)
+    if flush_cache then flush_cache = false; cache = {} end
     if game_instance and game_instance:IsValid() then
         local gs = statics():GetGameState(game_instance)
         local w = (gs and gs:IsValid()) and gs:GetAddress() or 0
@@ -162,14 +166,20 @@ local last_gs = nil
 -- -1) listed after the local player steals the local controller: the host then drives
 -- the other player's fighter and its own netcode input stays empty. For the first
 -- seconds of each match, make sure our controller is on the fighter with our index.
-local possess_key, possess_until = nil, 0
+local possess_key, possess_until, possess_ok = nil, 0, false
 local function fix_possession(gs, match_key, player)
-    if possess_key ~= match_key then possess_key = match_key; possess_until = os.clock() + 20 end
-    if os.clock() > possess_until then return end
+    if possess_key ~= match_key then possess_key = match_key; possess_until = os.clock() + 20; possess_ok = false end
+    if os.clock() > possess_until then
+        if not possess_ok then
+            possess_ok = true    -- report once
+            print(string.format("[DevExec] WARNING: could not confirm our controller is on fighter %d\n", player))
+        end
+        return
+    end
     local pc = statics():GetPlayerController(gs, 0)
     if not pc or not pc:IsValid() then return end
     local pawn = pc.Pawn
-    if pawn and pawn:IsValid() and pawn.PlayerIndex == player then return end
+    if pawn and pawn:IsValid() and pawn.PlayerIndex == player then possess_ok = true; return end
     for _, c in ipairs(FindAllOf("MvsFixedCharacter") or {}) do
         if c:IsValid() and c.PlayerIndex == player then
             pc:Possess(c)
@@ -185,6 +195,8 @@ local function auto_connect()
     local line = f:read("l") or ""; f:close()
     local ip, port, team, player, mid, key, env = line:match("^(%S+)%s+(%d+)%s+(%-?%d+)%s+(%-?%d+)%s+(%S+)%s+(%S+)%s+(%S+)")
     if not ip then return end
+    -- The old world is being torn down: its objects may already be freed.
+    if Traveling() then return end
     local gs = GameState()
     if not gs then return end
     -- StartMatch writes into the session; calling it before the game state has
@@ -503,7 +515,10 @@ LoopAsync(100, function()
         -- (its pump runs on the game thread from the inventory hook).
         local cg = io.open("MvsRevival.cgactive", "r")
         if cg then cg:close(); ExecuteInGameThread(function() if not Traveling() then pump() end end) end
-        local roster = io.open("MvsRevival.roster", "r")
+        -- The older Local Play lobby flow (lobby_tick) only when no Custom Game lobby is open:
+        -- it drives Local Play screen widgets, and a cached widget from a screen that has
+        -- since been closed is freed memory (touching it crashes the game).
+        local roster = not cg and io.open("MvsRevival.roster", "r")
         if roster then
             roster:close()
             ExecuteInGameThread(function()
