@@ -46,7 +46,21 @@ If the installer can't find the game, it asks you to pick the MultiVersus folder
 
 ### Install on Bazzite / Linux
 
-MultiVersus runs through Proton, which needs two extra steps on top of copying the files. Skip either one and the mod won't work: without step 3 it never loads, and without step 4 the game crashes at startup. Linux players can join Windows players normally.
+Linux players can join Windows players normally. Open a terminal (on Bazzite: **Konsole**) and paste:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/DarrellBest/multiversus-revival/main/install.sh | bash
+```
+
+Or download this project as above and run `bash install.sh` in its folder. You can also double-click `install.sh` and choose **Run**. Run it again any time to update.
+
+The installer finds MultiVersus in any Steam library, copies the mod in, and sets up the game's Proton prefix: it makes Proton load the mod and installs a new enough Visual C++ runtime there. It uses Protontricks for that, which Bazzite already has; on other systems it offers to install it from Flathub. If MultiVersus has never been started, it offers to start it once so Proton can create the prefix. Close the game when it reaches the title screen, and the install carries on. Options: `--game-dir "<folder>"`, `--dry-run`, `--no-launch`, `--local` (use the files next to the script instead of downloading the latest).
+
+To check it worked: after a launch, `UE4SS.log` and `MvsRevival.log` should appear next to `MultiVersus-Win64-Shipping.exe`. If they don't, set the launch option from step 3 below.
+
+#### Manual install on Linux
+
+MultiVersus runs through Proton, which needs two extra steps on top of copying the files. Skip either one and the mod won't work: without step 3 it never loads, and without step 4 the game crashes at startup.
 
 1. **Run MultiVersus once from Steam**, then close it. This creates its Proton prefix.
 2. **Copy the files:** in Steam, right-click **MultiVersus**, then choose **Manage** and **Browse local files**. Open `MultiVersus/Binaries/Win64` (it contains `MultiVersus-Win64-Shipping.exe`) and copy **everything inside this project's `Win64` folder** into it, replacing files if asked. From a terminal:
@@ -106,8 +120,8 @@ Gameplay screenshots are on the way. They are being captured from the current te
   - `MvsRevival.log`
   - `UE4SS.log`
 - **The game crashed:** also send the newest folder in `%LOCALAPPDATA%\MultiVersus\Saved\Crashes` (paste that path into File Explorer's address bar), zipped. On Linux this folder is in the Proton prefix: `~/.local/share/Steam/steamapps/compatdata/1818750/pfx/drive_c/users/steamuser/AppData/Local/MultiVersus/Saved/Crashes`. There's also a `crash_*.dmp` next to the game's exe.
-- **Linux: no logs appear, or the game crashes on startup:** see [Install on Bazzite / Linux](#install-on-bazzite--linux), steps 3 and 4.
-- **Updating:** run `Install.bat` from a fresh download, or the PowerShell line above. It replaces the old files.
+- **Linux: no logs appear, or the game crashes on startup:** run `install.sh` again, or see [Manual install on Linux](#manual-install-on-linux), steps 3 and 4.
+- **Updating:** run `Install.bat` from a fresh download, or the PowerShell line above (on Linux, `install.sh` or the `curl` line). It replaces the old files.
 - **Skip the faceoff:** create an empty file named `MvsRevival.nofaceoff` next to the game's exe to go straight to the stage.
 
 ## For modders and contributors
