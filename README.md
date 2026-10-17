@@ -19,7 +19,7 @@ This is a community preservation project. It uses the game you already have inst
 
 ## Install (1 minute)
 
-You need **MultiVersus installed through Steam on Windows**. Every player installs the mod.
+You need **MultiVersus installed through Steam on Windows**. Every player installs the mod. On Linux (Bazzite, SteamOS, Steam Deck and other distros using Proton), follow [Install on Bazzite / Linux](#install-on-bazzite--linux) instead.
 
 1. **Download this project:** click the green **Code** button above, then **Download ZIP**, and unzip it anywhere.
 2. **Double-click `Install.bat`.**
@@ -43,6 +43,40 @@ If the installer can't find the game, it asks you to pick the MultiVersus folder
 1. In Steam, right-click **MultiVersus**, then choose **Manage** and **Browse local files**.
 2. Open `MultiVersus\Binaries\Win64`. It contains `MultiVersus-Win64-Shipping.exe`.
 3. Copy **everything inside this project's `Win64` folder** into it. Allow it to replace files if asked.
+
+### Install on Bazzite / Linux
+
+MultiVersus runs through Proton, which needs two extra steps on top of copying the files. Skip either one and the mod won't work: without step 3 it never loads, and without step 4 the game crashes at startup. Linux players can join Windows players normally.
+
+1. **Run MultiVersus once from Steam**, then close it. This creates its Proton prefix.
+2. **Copy the files:** in Steam, right-click **MultiVersus**, then choose **Manage** and **Browse local files**. Open `MultiVersus/Binaries/Win64` (it contains `MultiVersus-Win64-Shipping.exe`) and copy **everything inside this project's `Win64` folder** into it, replacing files if asked. From a terminal:
+
+   ```bash
+   cp -r Win64/. ~/.local/share/Steam/steamapps/common/MultiVersus/MultiVersus/Binaries/Win64/
+   ```
+
+   If the game is in another Steam library, use that library's `steamapps/common/MultiVersus` path instead.
+3. **Make Proton load the mod:** in Steam, right-click **MultiVersus**, then choose **Properties** and **General**. Paste this into **Launch Options**:
+
+   ```
+   WINEDLLOVERRIDES="dwmapi=n,b" %command%
+   ```
+
+   The mod is loaded through `dwmapi.dll`. Proton uses its own built-in copy of that file unless told otherwise, so without this option the game starts as if the mod wasn't there.
+4. **Update the C++ runtime in the game's prefix:** close MultiVersus, then run:
+
+   ```bash
+   flatpak run com.github.Matoking.protontricks 1818750 -q vcrun2022
+   ```
+
+   Bazzite comes with Protontricks as a Flatpak. If yours is installed another way, run `protontricks 1818750 -q vcrun2022`. `1818750` is MultiVersus' Steam app ID. It takes a minute or two; the Wine `fixme` lines it prints are normal.
+
+   The prefix ships with the 2022 Visual C++ runtime (14.31). `MvsRevival.dll` needs 14.40 or newer and crashes on startup with an older one (an access violation in `msvcp140.dll`).
+5. **Launch the game from Steam.** On the home screen, **PLAY** opens the multiplayer menu.
+
+To check it worked: after a launch, `UE4SS.log` and `MvsRevival.log` should appear next to `MultiVersus-Win64-Shipping.exe`. If they don't, the launch option from step 3 isn't set.
+
+To update, repeat step 2 with the new files. Steps 3 and 4 only need doing once, unless you delete the prefix: Steam removes it when you uninstall the game, and you can also delete it by hand.
 
 ### Uninstall
 
@@ -71,7 +105,8 @@ Gameplay screenshots are on the way. They are being captured from the current te
 - **Something broke:** send these two files from your game's `Binaries\Win64` folder:
   - `MvsRevival.log`
   - `UE4SS.log`
-- **The game crashed:** also send the newest folder in `%LOCALAPPDATA%\MultiVersus\Saved\Crashes` (paste that path into File Explorer's address bar), zipped.
+- **The game crashed:** also send the newest folder in `%LOCALAPPDATA%\MultiVersus\Saved\Crashes` (paste that path into File Explorer's address bar), zipped. On Linux this folder is in the Proton prefix: `~/.local/share/Steam/steamapps/compatdata/1818750/pfx/drive_c/users/steamuser/AppData/Local/MultiVersus/Saved/Crashes`. There's also a `crash_*.dmp` next to the game's exe.
+- **Linux: no logs appear, or the game crashes on startup:** see [Install on Bazzite / Linux](#install-on-bazzite--linux), steps 3 and 4.
 - **Updating:** run `Install.bat` from a fresh download, or the PowerShell line above. It replaces the old files.
 - **Skip the faceoff:** create an empty file named `MvsRevival.nofaceoff` next to the game's exe to go straight to the stage.
 
