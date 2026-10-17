@@ -4,8 +4,9 @@
 # Also works without downloading anything first, from a PowerShell window:
 #   irm https://raw.githubusercontent.com/DarrellBest/multiversus-revival/main/install.ps1 | iex
 # Options: -GameDir "<folder containing MultiVersus.exe>"   -DryRun (only report what it would do)
-#          -NoLaunch (do not offer to start the game)
-param([string]$GameDir = "", [switch]$DryRun, [switch]$NoLaunch)
+#          -NoLaunch (do not offer to start the game)   -Local (install the files next to this script
+#          instead of downloading the latest)
+param([string]$GameDir = "", [switch]$DryRun, [switch]$NoLaunch, [switch]$Local)
 
 $ErrorActionPreference = "Stop"
 $AppId = "1818750"                               # MultiVersus on Steam
@@ -112,23 +113,35 @@ if (-not $GameDir) {
 $target = Join-Path $GameDir "MultiVersus\Binaries\Win64"
 Say "Found MultiVersus: $GameDir" "Green"
 
-# ---- the mod files: next to this script, else downloaded
+# ---- the mod files: always the latest from GitHub (an old unzipped copy next to this script would
+# otherwise put an old version back); the local copy only with -Local or when the download fails.
+$localSource = $null
+if ($PSScriptRoot -and (Test-Path -LiteralPath (Join-Path $PSScriptRoot "Win64\MvsRevival.dll"))) { $localSource = Join-Path $PSScriptRoot "Win64" }
 $source = $null
-if ($PSScriptRoot -and (Test-Path -LiteralPath (Join-Path $PSScriptRoot "Win64\MvsRevival.dll"))) {
-    $source = Join-Path $PSScriptRoot "Win64"
+if ($Local -and $localSource) {
+    $source = $localSource
 } elseif ($DryRun) {
     $source = "(download from $RepoZip)"
 } else {
     Say "Downloading the latest MultiVersus Revival..."
-    $tmp = Join-Path ([IO.Path]::GetTempPath()) ("mvs-revival-" + [Guid]::NewGuid().ToString("N"))
-    New-Item -ItemType Directory -Path $tmp | Out-Null
-    $zip = Join-Path $tmp "mod.zip"
-    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-    Invoke-WebRequest -Uri $RepoZip -OutFile $zip -UseBasicParsing
-    Expand-Archive -LiteralPath $zip -DestinationPath $tmp
-    $source = Get-ChildItem -LiteralPath $tmp -Directory | ForEach-Object { Join-Path $_.FullName "Win64" } |
-              Where-Object { Test-Path -LiteralPath (Join-Path $_ "MvsRevival.dll") } | Select-Object -First 1
-    if (-not $source) { Say "The download did not contain the mod files." "Red"; Pause-OnError; return }
+    try {
+        $tmp = Join-Path ([IO.Path]::GetTempPath()) ("mvs-revival-" + [Guid]::NewGuid().ToString("N"))
+        New-Item -ItemType Directory -Path $tmp | Out-Null
+        $zip = Join-Path $tmp "mod.zip"
+        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+        $url = "$RepoZip" + "?nocache=" + [DateTime]::UtcNow.Ticks          # never a cached copy
+        Invoke-WebRequest -Uri $url -OutFile $zip -UseBasicParsing -Headers @{ "Cache-Control" = "no-cache"; "Pragma" = "no-cache" }
+        Expand-Archive -LiteralPath $zip -DestinationPath $tmp
+        $source = Get-ChildItem -LiteralPath $tmp -Directory | ForEach-Object { Join-Path $_.FullName "Win64" } |
+                  Where-Object { Test-Path -LiteralPath (Join-Path $_ "MvsRevival.dll") } | Select-Object -First 1
+    } catch {
+        Say "Download failed: $($_.Exception.Message)" "Yellow"
+    }
+    if (-not $source -and $localSource) {
+        Say "Using the files next to this installer instead (they may be older)." "Yellow"
+        $source = $localSource
+    }
+    if (-not $source) { Say "Could not get the mod files." "Red"; Pause-OnError; return }
 }
 
 if ($DryRun) {
@@ -137,15 +150,52 @@ if ($DryRun) {
 }
 
 # ---- the game must be closed (its files are in use while it runs)
-while (Get-Process MultiVersus-Win64-Shipping -ErrorAction SilentlyContinue |
-       Where-Object { $_.Path -and $_.Path.StartsWith($target, [StringComparison]::OrdinalIgnoreCase) }) {
-    Say "MultiVersus is running. Close the game, then press Enter to continue." "Yellow"
-    Read-Host | Out-Null
+# (polled, never a keypress loop: without a keyboard Read-Host returns at once and spun forever)
+if (Get-Process MultiVersus-Win64-Shipping, MultiVersus -ErrorAction SilentlyContinue) {
+    Say "MultiVersus is running. Close the game; the install continues by itself." "Yellow"
+    $until = (Get-Date).AddMinutes(10)
+    while ((Get-Process MultiVersus-Win64-Shipping, MultiVersus -ErrorAction SilentlyContinue) -and (Get-Date) -lt $until) {
+        Start-Sleep -Seconds 2
+    }
+    if (Get-Process MultiVersus-Win64-Shipping, MultiVersus -ErrorAction SilentlyContinue) {
+        Say "MultiVersus is still running; nothing was installed. Close it and run the installer again." "Red"
+        Pause-OnError; return
+    }
+    Start-Sleep -Seconds 2      # let Windows release the game's files
 }
 
-Copy-Item -Path (Join-Path $source "*") -Destination $target -Recurse -Force
+# ---- copy every file, replacing what is there, and check each one arrived intact
+$from = (Resolve-Path -LiteralPath $source).Path.TrimEnd([char]92)
+$files = Get-ChildItem -LiteralPath $from -Recurse -File
+$failed = @()
+foreach ($f in $files) {
+    $rel = $f.FullName.Substring($from.Length).TrimStart([char]92)
+    $dst = Join-Path $target $rel
+    $dir = Split-Path $dst -Parent
+    if (-not (Test-Path -LiteralPath $dir)) { New-Item -ItemType Directory -Path $dir -Force | Out-Null }
+    $want = (Get-FileHash -LiteralPath $f.FullName -Algorithm SHA256).Hash
+    $ok = $false
+    for ($try = 1; $try -le 5 -and -not $ok; $try++) {
+        try {
+            if (Test-Path -LiteralPath $dst) { (Get-Item -LiteralPath $dst -Force).Attributes = 'Normal' }   # read-only, hidden
+            [IO.File]::Copy($f.FullName, $dst, $true)
+            $ok = (Get-FileHash -LiteralPath $dst -Algorithm SHA256).Hash -eq $want
+        } catch { }
+        if (-not $ok) { Start-Sleep -Milliseconds 700 }
+    }
+    if (-not $ok) { $failed += $rel }
+}
 Say ""
-Say "Installed into $target" "Green"
+if ($failed.Count -gt 0) {
+    Say "These files could not be replaced:" "Red"
+    foreach ($x in $failed) { Say "  $x" "Red" }
+    Say "Close MultiVersus (and anything else using the game folder, e.g. an antivirus scan), then run the installer again." "Yellow"
+    Pause-OnError; return
+}
+$dll = Get-Item -LiteralPath (Join-Path $target "MvsRevival.dll")
+$ver = (Get-FileHash -LiteralPath $dll.FullName -Algorithm SHA256).Hash.Substring(0, 8).ToLower()
+Say "Installed $($files.Count) files into $target" "Green"
+Say "MvsRevival.dll version $ver (built $($dll.LastWriteTime.ToString('yyyy-MM-dd HH:mm')))" "Green"
 Say "On the home screen, PLAY opens the multiplayer menu."
 if (-not $NoLaunch -and $Host.Name -eq "ConsoleHost") {
     $answer = Read-Host "Start MultiVersus now? (Y/n)"
