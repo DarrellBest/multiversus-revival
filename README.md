@@ -6,7 +6,7 @@ This is a community preservation project. It uses the game you already have inst
 
 ## What you get
 
-- **Everything unlocked:** all fighters, variants, banners, profile icons, ring-out effects and perk sets.
+- **Everything unlocked:** all fighters, variants, banners, profile icons, ring-out effects and perk sets, plus all of MultiVersus' **Steam achievements** (unlocked on your Steam account the first time you start the game with the mod; create an empty file named `MvsRevival.no-achievements` next to the game's exe to skip that).
 - **Online play over Steam:** one player hosts from their own game. Friends join with a 5-letter code or a Steam invite. Steam handles the connection, so no router setup is needed.
 - **The original screens, working again:**
   - **Custom Game lobbies:** teams, time, ring-outs, hazards, map selection, handicap and bots.
